@@ -170,7 +170,7 @@ def make_selections(driver, args: MyArgs):
 	driver.find_element(by = By.ID, value = "btnView").click()
 	WebDriverWait(driver, timeout = 10).until(lambda d: d.find_element(by=By.ID, value = "RepDetails_ctl01_lblStudent"))
 
-def fill_marks_for(driver, args: MyArgs, student_row):
+def verify_marks_for(driver, args: MyArgs, student_row):
 	mark_index = 1 + int(args.info['exam set'])
 	text_box_str = "RepDetails_ctl{rollno}_datalistdisp_ctl{colno}_txtMarks"
 	save_btn_str = "RepDetails_ctl{rollno}_imgbtnAddGrade"
@@ -178,13 +178,12 @@ def fill_marks_for(driver, args: MyArgs, student_row):
 	while current_col < cols[args.info['subject'].lower()]:
 		text_box_id = text_box_str.format(rollno = str(student_row[0]).zfill(2), colno = str(current_col).zfill(2))
 		marks_box = driver.find_element(by = By.ID, value = text_box_id)
-		marks_box.clear()
-		marks_box.send_keys(str(student_row[mark_index]))
+		marks_online = float(marks_box.get_attribute('value'))
+		if float(str(student_row[mark_index])) != marks_online:
+			exam_set = args.info['exam set']
+			print(f'- Mismatch for {student_row[1]}: replace {current_col+1} column for set {exam_set} with {marks_online}')
 		mark_index = mark_index + 2
 		current_col = current_col + 1
-	save_btn = driver.find_element(by = By.ID, value = save_btn_str.format(rollno = str(student_row[0]).zfill(2)))
-	save_btn.click()
-	driver.implicitly_wait(2)
 	# WebDriverWait(driver, timeout = 10).until(lambda d: d.find_element(by=By.ID, value = "lblMessage"))
 	# label = driver.find_element(by=By.ID, value = "lblMessage")
 	# label.text
@@ -201,7 +200,7 @@ def run():
 	navigate_to_marks(driver, myargs)
 	make_selections(driver, myargs)
 	for _, row in df.iterrows():
-		fill_marks_for(driver, args = myargs, student_row = row)
+		verify_marks_for(driver, args = myargs, student_row = row)
 	_ = input("type anything to quit: ")
 	driver.close()
 	driver.quit()
